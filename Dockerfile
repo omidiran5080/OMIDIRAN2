@@ -2,7 +2,7 @@
 # OMID-IRAN PANEL v3.0.0 — Production Dockerfile
 # ══════════════════════════════════════════════════════════════════════════
 # • Base: Python 3.11 Slim
-# • Railway Volume compatible
+# • Cloady / Railway persistent-volume compatible
 # • Persistent data directory: /data
 # • No VOLUME declaration
 # • No non-root USER
@@ -43,7 +43,7 @@ RUN python -m pip install --upgrade pip \
 COPY . .
 
 # ── Persistent data directory ─────────────────────────────────────────────
-# Railway Volume will be mounted here at runtime.
+# Cloady / Railway persistent Volume is mounted here at runtime.
 RUN mkdir -p /data \
     && chmod 755 /data
 
@@ -55,11 +55,7 @@ HEALTHCHECK --interval=30s \
     --timeout=5s \
     --start-period=15s \
     --retries=3 \
-    CMD python -c "import urllib.request, sys; \
-        response = urllib.request.urlopen( \
-            'http://127.0.0.1:8000/health', timeout=3 \
-        ); \
-        sys.exit(0 if response.status == 200 else 1)"
+    CMD python -c "import os, urllib.request, sys; port=int(os.environ.get('PORT', '8000')); response=urllib.request.urlopen(f'http://127.0.0.1:{port}/health', timeout=3); sys.exit(0 if response.status == 200 else 1)"
 
 # ── Start command ──────────────────────────────────────────────────────────
 CMD ["python", "main.py"]

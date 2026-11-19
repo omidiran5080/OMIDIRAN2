@@ -7,13 +7,14 @@
 **پنل مدیریت کانفیگ VLESS / VMess / Trojan + WebSocket / XHTTP Ultra**
 
 [![Railway](https://img.shields.io/badge/Deploy-Railway-7B61FF?logo=railway&logoColor=white)](https://railway.app/)
+[![Cloady](https://img.shields.io/badge/Deploy-Cloady-2563EB?logo=cloudflare&logoColor=white)](https://cloady.com/)
 [![Docker](https://img.shields.io/badge/Container-GHCR-2496ED?logo=docker&logoColor=white)](https://github.com/omidiran-gaming/omidiran/pkgs/container/omidiran)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Telegram](https://img.shields.io/badge/Telegram-@omid__gamingORG-26A5E4?logo=telegram&logoColor=white)](https://t.me/omid_gamingORG)
 
-**فقط Railway • دو روش نصب: Fork از GitHub یا Deploy مستقیم Container**
+**استقرار روی Railway و Cloady • Docker و GitHub Deploy**
 
 </div>
 
@@ -195,7 +196,13 @@
 - بررسی Active / Expiry / Quota قبل از اجازه‌ی اتصال
 - ذخیره‌ی State در `gateway_state.json`
 
-برای استقرار Railway، مسیر `/data` را به‌صورت Volume متصل کنید تا State و Secret بعد از Restart یا Redeploy از بین نروند.
+برای استقرار روی Railway یا Cloady، مسیر `/data` را به‌صورت Volume متصل کنید تا State و Secret بعد از Restart یا Redeploy از بین نروند.
+
+---
+
+# ☁️ نصب روی Cloady
+
+راهنمای کامل استقرار این نسخه روی Cloady در فایل [`CLOADY_DEPLOY.md`](CLOADY_DEPLOY.md) قرار دارد. در Cloady از Repository یا Dockerfile پروژه استفاده کنید، متغیر `PORT=8000` را تنظیم کنید و یک Volume با مسیر `/data` بسازید.
 
 ---
 

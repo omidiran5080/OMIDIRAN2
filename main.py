@@ -247,7 +247,12 @@ def _load_or_create_secret() -> str:
 CONFIG = {
     "port": int(os.environ.get("PORT", 8000)),
     "secret": _load_or_create_secret(),
-    "host": os.environ.get("RAILWAY_PUBLIC_DOMAIN", "localhost"),
+    "host": (
+        os.environ.get("CLOADY_PRIMARY_HOST")
+        or os.environ.get("CLOADY_DOMAIN")
+        or os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+        or "localhost"
+    ),
 }
 
 app.add_middleware(
@@ -274,7 +279,7 @@ def _write_state_file_sync(path: Path, payload: str) -> None:
         os.fsync(f.fileno())
     os.replace(tmp, path)
 
-    # fsync the directory entry as well. This is supported on Linux/Railway.
+    # fsync the directory entry as well. This is supported on Linux persistent-volume filesystems.
     try:
         dir_fd = os.open(str(path.parent), os.O_DIRECTORY)
     except (AttributeError, OSError):
@@ -290,7 +295,7 @@ async def verify_persistence() -> None:
 
     IMPORTANT: /tmp on Vercel is ephemeral and instance-local. This fallback only
     prevents startup from crashing; it does NOT provide durable/shared state. Use
-    Railway with a mounted /data volume (or an external database) for production.
+    Cloady or Railway with a mounted /data volume (or an external database) for production.
     """
     global DATA_DIR, DATA_FILE, SECRET_FILE
 
@@ -364,7 +369,7 @@ async def load_state():
     except Exception as e:
         logger.exception(f"Could not load state from {DATA_FILE}: {e}")
         # Do not silently pretend persistence is healthy. The server can still
-        # start, but the exact path/error is now visible in Railway logs.
+        # start, but the exact path/error is now visible in the platform logs.
 
 async def save_state():
     """Persist the complete panel state atomically and durably."""
@@ -388,7 +393,7 @@ async def save_state():
                 "saved_at": datetime.now().isoformat(),
             }
             # Serialize + fsync on a DEDICATED single thread. Using the default
-            # executor here let slow fsyncs on the Railway volume starve the
+            # executor here let slow fsyncs on the persistent volume starve the
             # threads that asyncio.open_connection() needs for DNS lookups,
             # which froze every relay (WS and XHTTP) at the same time.
             loop = asyncio.get_running_loop()
@@ -728,7 +733,7 @@ async def require_auth(request: Request):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def get_host(request: Request | None = None) -> str:
-    """Resolve the public host from the request headers first, with the Railway domain as fallback.
+    """Resolve the public host from the request headers first, with the Cloady/Railway domain as fallback.
     The observed host is cached in CONFIG for callers that do not have a request object."""
     if request is not None:
         h = request.headers.get("x-forwarded-host") or request.headers.get("host")
@@ -736,7 +741,12 @@ def get_host(request: Request | None = None) -> str:
             h = h.split(":")[0]
             CONFIG["host"] = h  # Cache the last observed public host for request-less callers
             return h
-    return os.environ.get("RAILWAY_PUBLIC_DOMAIN", CONFIG["host"])
+    return (
+        os.environ.get("CLOADY_PRIMARY_HOST")
+        or os.environ.get("CLOADY_DOMAIN")
+        or os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+        or CONFIG["host"]
+    )
 
 def get_scheme(request: Request | None = None) -> str:
     """Resolve the real request scheme (http/https), including proxy headers."""
@@ -1080,7 +1090,7 @@ def is_ip_allowed(link: dict | None, uuid: str, ip: str) -> bool:
     return len(ips) < limit
 
 def client_ip(request: Request) -> str:
-    """Return the client IP, honoring Railway/Cloudflare proxy headers."""
+    """Return the client IP, honoring platform and Cloudflare proxy headers."""
     fwd = request.headers.get("x-forwarded-for")
     if fwd:
         return fwd.split(",")[0].strip()
